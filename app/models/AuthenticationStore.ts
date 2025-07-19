@@ -5,10 +5,15 @@ export const AuthenticationStoreModel = types
   .props({
     authToken: types.maybe(types.string),
     authEmail: "",
+    user: types.maybe(types.frozen()),
+    session: types.maybe(types.frozen()),
+    userRole: types.maybe(types.string),
+    isLoading: types.optional(types.boolean, false),
+    error: types.maybe(types.string),
   })
   .views((store) => ({
     get isAuthenticated() {
-      return !!store.authToken
+      return !!store.authToken && !!store.session
     },
     get validationError() {
       if (store.authEmail.length === 0) return "can't be blank"
@@ -25,9 +30,28 @@ export const AuthenticationStoreModel = types
     setAuthEmail(value: string) {
       store.authEmail = value.replace(/ /g, "")
     },
+    setUser(user: any) {
+      store.user = user
+    },
+    setSession(session: any) {
+      store.session = session
+    },
+    setUserRole(role: string) {
+      store.userRole = role
+    },
+    setIsLoading(loading: boolean) {
+      store.isLoading = loading
+    },
+    setError(error?: string) {
+      store.error = error
+    },
     logout() {
       store.authToken = undefined
       store.authEmail = ""
+      store.user = undefined
+      store.session = undefined
+      store.userRole = undefined
+      store.error = undefined
     },
   }))
 
