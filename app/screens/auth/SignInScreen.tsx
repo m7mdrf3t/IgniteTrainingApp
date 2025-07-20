@@ -62,7 +62,7 @@ export const SignInScreen = observer(function SignInScreen(_props: SignInScreenP
         authenticationStore.setAuthEmail(data.email)
 
         // Navigate to main app - we need to navigate to the parent navigator
-        _props.navigation.getParent()?.navigate("Demo" as any)
+        _props.navigation.getParent()?.navigate("MainApp" as any)
       } else {
         authenticationStore.setError(response.error || "Sign in failed")
         Alert.alert("Error", response.error || "Sign in failed")

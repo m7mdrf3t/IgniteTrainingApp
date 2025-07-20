@@ -10,8 +10,9 @@ import { observer } from "mobx-react-lite"
 import * as Screens from "@/screens"
 import Config from "../config"
 import { useStores } from "../models"
-import { DemoNavigator, DemoTabParamList } from "./DemoNavigator"
+import { DemoTabParamList } from "./DemoNavigator"
 import { AuthNavigator } from "./AuthNavigator"
+import { MainAppTabs } from "./MainAppTabs"
 import { navigationRef, useBackButtonHandler } from "./navigationUtilities"
 import { useAppTheme, useThemeProvider } from "@/utils/useAppTheme"
 import { ComponentProps } from "react"
@@ -31,6 +32,7 @@ import { ComponentProps } from "react"
  */
 export type AppStackParamList = {
   Auth: undefined
+  MainApp: undefined
   Demo: NavigatorScreenParams<DemoTabParamList>
   // 🔥 Your screens go here
   // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
@@ -68,16 +70,12 @@ const AppStack = observer(function AppStack() {
           backgroundColor: colors.background,
         },
       }}
-      initialRouteName={isAuthenticated ? "Demo" : "Auth"}
+      initialRouteName={isAuthenticated ? "MainApp" : "Auth"}
     >
       {isAuthenticated ? (
-        <>
-          <Stack.Screen name="Demo" component={DemoNavigator} />
-        </>
+        <Stack.Screen name="MainApp" component={MainAppTabs} />
       ) : (
-        <>
-          <Stack.Screen name="Auth" component={AuthNavigator} />
-        </>
+        <Stack.Screen name="Auth" component={AuthNavigator} />
       )}
 
       {/** 🔥 Your screens go here */}

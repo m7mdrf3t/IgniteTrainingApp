@@ -53,6 +53,15 @@ export const AuthenticationStoreModel = types
       store.userRole = undefined
       store.error = undefined
     },
+    forceLogout() {
+      // Force logout without calling Supabase
+      store.authToken = undefined
+      store.authEmail = ""
+      store.user = undefined
+      store.session = undefined
+      store.userRole = undefined
+      store.error = undefined
+    },
   }))
 
 export interface AuthenticationStore extends Instance<typeof AuthenticationStoreModel> {}
