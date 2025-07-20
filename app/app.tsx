@@ -29,6 +29,8 @@ import * as storage from "./utils/storage"
 import { customFontsToLoad } from "./theme"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { loadDateFnsLocale } from "./utils/formatDate"
+import { supabase } from "./services/supabase"
+import { fetchUserProfile } from "./services/authService"
 
 export const NAVIGATION_PERSISTENCE_KEY = "NAVIGATION_STATE"
 
@@ -67,6 +69,7 @@ export function App() {
 
   const [areFontsLoaded, fontLoadError] = useFonts(customFontsToLoad)
   const [isI18nInitialized, setIsI18nInitialized] = useState(false)
+  const [isSessionRestored, setIsSessionRestored] = useState(false)
 
   useEffect(() => {
     initI18n()
@@ -74,8 +77,30 @@ export function App() {
       .then(() => loadDateFnsLocale())
   }, [])
 
-  const { rehydrated } = useInitialRootStore(() => {
+  const { rehydrated, rootStore } = useInitialRootStore(() => {
     // This runs after the root store has been initialized and rehydrated.
+
+    // Restore Supabase session and user profile
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log("[App] Restored session:", session)
+      if (session) {
+        const authenticationStore = rootStore.authenticationStore
+        authenticationStore.setAuthToken(session.access_token)
+        authenticationStore.setSession(session)
+        authenticationStore.setUser(session.user)
+        try {
+          const profile = await fetchUserProfile(session.user.id)
+          if (profile?.role) {
+            authenticationStore.setUserRole(profile.role)
+            authenticationStore.setUser({ ...session.user, ...profile })
+          }
+        } catch (e) {
+          // handle error
+        }
+      }
+      setIsSessionRestored(true)
+    })()
 
     // If your initialization scripts run very fast, it's good to show the splash screen for just a bit longer to prevent flicker.
     // Slightly delaying splash screen hiding for better UX; can be customized or removed as needed,
@@ -92,7 +117,8 @@ export function App() {
     !rehydrated ||
     !isNavigationStateRestored ||
     !isI18nInitialized ||
-    (!areFontsLoaded && !fontLoadError)
+    (!areFontsLoaded && !fontLoadError) ||
+    !isSessionRestored
   ) {
     return null
   }

@@ -13,10 +13,13 @@ import { useStores } from "../models"
 import { DemoTabParamList } from "./DemoNavigator"
 import { AuthNavigator } from "./AuthNavigator"
 import { MainAppTabs } from "./MainAppTabs"
+import { DoctorNavigator } from "./DoctorNavigator"
 import { navigationRef, useBackButtonHandler } from "./navigationUtilities"
 import { useAppTheme, useThemeProvider } from "@/utils/useAppTheme"
 import { ComponentProps, useEffect, useState } from "react"
 import { validateUserProfile } from "@/services/edge/validateUserProfile"
+import { ActivityIndicator, View } from "react-native"
+import { Screen } from "@/components"
 
 /**
  * This type allows TypeScript to know what routes are defined in this navigator
@@ -37,6 +40,7 @@ export type AppStackParamList = {
   Demo: NavigatorScreenParams<DemoTabParamList>
   CompleteProfile: undefined
   EngineerDashboard: undefined
+  Doctor: undefined
   // 🔥 Your screens go here
   // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
@@ -63,9 +67,11 @@ const AppStack = observer(function AppStack() {
   const [isProfileComplete, setIsProfileComplete] = useState(true)
 
   useEffect(() => {
+    console.log("[AppStack] isAuthenticated:", isAuthenticated, "user:", user, "user?.role:", user?.role)
     const checkProfile = async () => {
       if (isAuthenticated && user?.id) {
         const result = await validateUserProfile(user.id)
+        console.log("[AppStack] validateUserProfile result:", result)
         setIsProfileComplete(result.isProfileComplete ?? false)
         setProfileChecked(true)
       } else {
@@ -73,15 +79,18 @@ const AppStack = observer(function AppStack() {
       }
     }
     checkProfile()
-  }, [isAuthenticated, user?.id])
+  }, [isAuthenticated, user?.id, user?.role])
 
   const {
     theme: { colors },
   } = useAppTheme()
 
-  if (isAuthenticated && !profileChecked) {
-    // Optionally show a loading spinner here
-    return null
+  if (isAuthenticated && (!profileChecked || !user?.role)) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    )
   }
 
   return (
@@ -93,17 +102,27 @@ const AppStack = observer(function AppStack() {
           backgroundColor: colors.background,
         },
       }}
-      initialRouteName={isAuthenticated ? (isProfileComplete ? "MainApp" : "CompleteProfile") : "Auth"}
+      initialRouteName={
+        !isAuthenticated
+          ? "Auth"
+          : !isProfileComplete
+          ? "CompleteProfile"
+          : user?.role === "engineer"
+          ? "EngineerDashboard"
+          : user?.role === "doctor"
+          ? "Doctor"
+          : "MainApp"
+      }
     >
       {!isAuthenticated && <Stack.Screen name="Auth" component={AuthNavigator} />}
       {isAuthenticated && !isProfileComplete && (
         <Stack.Screen name="CompleteProfile" component={Screens.CompleteProfileScreen} />
       )}
-      {isAuthenticated && isProfileComplete && (
-        <Stack.Screen name="MainApp" component={MainAppTabs} />
-      )}
-      {isAuthenticated && isProfileComplete && (
+      {isAuthenticated && isProfileComplete && user?.role === "engineer" && (
         <Stack.Screen name="EngineerDashboard" component={Screens.EngineerDashboardScreen} />
+      )}
+      {isAuthenticated && isProfileComplete && user?.role === "doctor" && (
+        <Stack.Screen name="Doctor" component={DoctorNavigator} />
       )}
       {/** 🔥 Your screens go here */}
       {/* IGNITE_GENERATOR_ANCHOR_APP_STACK_SCREENS */}

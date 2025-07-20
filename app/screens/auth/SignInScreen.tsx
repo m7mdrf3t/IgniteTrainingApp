@@ -10,6 +10,7 @@ import { AuthStackParamList } from "@/navigators/AuthNavigator"
 import { useAppTheme } from "@/utils/useAppTheme"
 import { useStores } from "@/models"
 import { authService } from "@/services/authService"
+import { fetchUserProfile } from "@/services/authService"
 
 interface SignInScreenProps extends NativeStackScreenProps<AuthStackParamList, "SignIn"> {}
 
@@ -46,31 +47,47 @@ export const SignInScreen = observer(function SignInScreen(_props: SignInScreenP
   const onSubmit = async (data: SignInFormData) => {
     setIsLoading(true)
     authenticationStore.setError(undefined)
+    console.log("[SignIn] Submitting with:", data)
 
     try {
       const response = await authService.signIn({
         email: data.email,
         password: data.password,
       })
+      console.log("[SignIn] Auth response:", response)
 
       if (response.success && response.data) {
         // Update store with user data
         authenticationStore.setAuthToken(response.data.session.access_token)
         authenticationStore.setUser(response.data.user)
         authenticationStore.setSession(response.data.session)
-        authenticationStore.setUserRole(response.data.role)
         authenticationStore.setAuthEmail(data.email)
 
-        // Navigate to main app - we need to navigate to the parent navigator
-        _props.navigation.getParent()?.navigate("MainApp" as any)
+        // Fetch and set user role
+        try {
+          const profile = await fetchUserProfile(response.data.user.id)
+          console.log("[SignIn] Fetched user profile:", profile)
+          if (profile?.role) {
+            authenticationStore.setUserRole(profile.role)
+            authenticationStore.setUser({ ...response.data.user, ...profile }) // merge
+            console.log("[SignIn] Set user role:", profile.role)
+          } else {
+            console.log("[SignIn] No role found in profile")
+          }
+        } catch (e) {
+          console.log("[SignIn] Error fetching user profile:", e)
+        }
+        // Do not navigate manually; let the stack handle it
       } else {
         authenticationStore.setError(response.error || "Sign in failed")
         Alert.alert("Error", response.error || "Sign in failed")
+        console.log("[SignIn] Sign in failed:", response.error)
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
       authenticationStore.setError(errorMessage)
       Alert.alert("Error", errorMessage)
+      console.log("[SignIn] Exception:", error)
     } finally {
       setIsLoading(false)
     }

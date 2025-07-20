@@ -173,3 +173,13 @@ export const authService = {
     }
   },
 }
+
+export async function fetchUserProfile(userId: string) {
+  const { data, error } = await supabase
+    .from("users")
+    .select("role, name, email")
+    .eq("id", userId)
+    .single()
+  if (error) throw error
+  return data
+}

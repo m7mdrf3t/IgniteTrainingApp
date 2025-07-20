@@ -9,6 +9,9 @@ export * from "./main/HomeScreen"
 export * from "./main/ProfileScreen"
 export * from "./main/SettingsScreen"
 export * from "./main/DebugScreen"
+export * from "./main/EngineerDashboardScreen"
+export * from "./main/DoctorDashboardScreen"
+export * from "./main/DoctorNewRequestScreen"
 
 // Demo screens
 export * from "./DemoCommunityScreen"
