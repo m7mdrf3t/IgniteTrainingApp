@@ -17,3 +17,4 @@ export * from "./DemoShowroomScreen/DemoShowroomScreen"
 
 export * from "./ErrorScreen/ErrorBoundary"
 // export other screens here
+export * from "./onboarding/CompleteProfileScreen"

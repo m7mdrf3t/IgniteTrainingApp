@@ -15,7 +15,8 @@ import { AuthNavigator } from "./AuthNavigator"
 import { MainAppTabs } from "./MainAppTabs"
 import { navigationRef, useBackButtonHandler } from "./navigationUtilities"
 import { useAppTheme, useThemeProvider } from "@/utils/useAppTheme"
-import { ComponentProps } from "react"
+import { ComponentProps, useEffect, useState } from "react"
+import { validateUserProfile } from "@/services/edge/validateUserProfile"
 
 /**
  * This type allows TypeScript to know what routes are defined in this navigator
@@ -34,6 +35,8 @@ export type AppStackParamList = {
   Auth: undefined
   MainApp: undefined
   Demo: NavigatorScreenParams<DemoTabParamList>
+  CompleteProfile: undefined
+  EngineerDashboard: undefined
   // 🔥 Your screens go here
   // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
@@ -54,12 +57,32 @@ const Stack = createNativeStackNavigator<AppStackParamList>()
 
 const AppStack = observer(function AppStack() {
   const {
-    authenticationStore: { isAuthenticated },
+    authenticationStore: { isAuthenticated, user },
   } = useStores()
+  const [profileChecked, setProfileChecked] = useState(false)
+  const [isProfileComplete, setIsProfileComplete] = useState(true)
+
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (isAuthenticated && user?.id) {
+        const result = await validateUserProfile(user.id)
+        setIsProfileComplete(result.isProfileComplete ?? false)
+        setProfileChecked(true)
+      } else {
+        setProfileChecked(true)
+      }
+    }
+    checkProfile()
+  }, [isAuthenticated, user?.id])
 
   const {
     theme: { colors },
   } = useAppTheme()
+
+  if (isAuthenticated && !profileChecked) {
+    // Optionally show a loading spinner here
+    return null
+  }
 
   return (
     <Stack.Navigator
@@ -70,14 +93,18 @@ const AppStack = observer(function AppStack() {
           backgroundColor: colors.background,
         },
       }}
-      initialRouteName={isAuthenticated ? "MainApp" : "Auth"}
+      initialRouteName={isAuthenticated ? (isProfileComplete ? "MainApp" : "CompleteProfile") : "Auth"}
     >
-      {isAuthenticated ? (
-        <Stack.Screen name="MainApp" component={MainAppTabs} />
-      ) : (
-        <Stack.Screen name="Auth" component={AuthNavigator} />
+      {!isAuthenticated && <Stack.Screen name="Auth" component={AuthNavigator} />}
+      {isAuthenticated && !isProfileComplete && (
+        <Stack.Screen name="CompleteProfile" component={Screens.CompleteProfileScreen} />
       )}
-
+      {isAuthenticated && isProfileComplete && (
+        <Stack.Screen name="MainApp" component={MainAppTabs} />
+      )}
+      {isAuthenticated && isProfileComplete && (
+        <Stack.Screen name="EngineerDashboard" component={Screens.EngineerDashboardScreen} />
+      )}
       {/** 🔥 Your screens go here */}
       {/* IGNITE_GENERATOR_ANCHOR_APP_STACK_SCREENS */}
     </Stack.Navigator>
